@@ -1,0 +1,82 @@
+﻿@model ParkingManagement.Models.AdminTask
+
+@{
+    string sType = "";
+}
+<div class="form-group">
+    <label for="vehicleType">Vehicle Type</label>
+    <input type="text" class="form-control" id="vehicleType" aria-describedby="vehicleHelp" placeholder="Enter Vehicle Type">
+    <small id="" class="form-text text-muted">Add Vehicle Type ex: 2 Wheeler or Truck</small>
+    <div>
+        <label id="lblError-vehicleType" style="display: none; color: red;">This field is Required</label>
+    </div>
+</div>
+
+@foreach (var slotType in Model.lstSlots)
+{
+    
+    <div class="form-check">
+    <input type="checkbox" class="form-check-input clsChkSlot" id="chkbox_@slotType" data-slottype ="@slotType">
+    <label class="form-check-label" for="">@slotType</label>
+    </div>
+
+    <div class="form-group">
+        <input type="text" class="form-control" style="width: 60px" id="slotType_@slotType" placeholder="">
+        <small id="" class="form-text text-muted">Add Percent till when which vehicle will be alloted to which slot. ex: 0 percent means till last slot is available</small>
+    </div>
+
+}
+
+<input type="button" style="text-align: center" class="btn btn-success" value="Add Vehicle Type" id="btnAddVehicleType">
+
+<script>
+    $("#btnAddVehicleType").click(function() {
+        var isValidForm = false;
+        var vehicleTypes = {};
+        var slotType = "";
+        var vehicleType = $("#vehicleType").val();
+        var selectVehicleTypeHtml = "";
+
+        if (vehicleType == "") {
+            $("#lblError-vehicleType").show();
+            return;
+        } else
+        {
+            $("#lblError-vehicleType").hide();
+        }
+        $(".clsChkSlot").each(function() {
+
+            if (this.checked) {
+                slotType = $(this).attr('data-slottype');
+                vehicleTypes[slotType] = $("#slotType_" + slotType).val();
+                isValidForm = true;
+            }
+
+        });
+        if (isValidForm == true) {
+            console.log(vehicleTypes);
+
+            $.ajax({
+                type: "POST",
+                url: "/Home/AddVehicleType",
+                dataType: "json",
+                data: { vehicleType: vehicleType, dctVehicleTypeSlots: vehicleTypes},
+                success: function (response) {
+                    if (response == true) {
+                        selectVehicleTypeHtml = $("#CarType").html();
+                        selectVehicleTypeHtml += '<option value="' + vehicleType + '">' + vehicleType +'</option>';
+                        $("#CarType").html(selectVehicleTypeHtml);
+                        alertify.warning(vehicleType+ " is added");
+                    }
+                    $("#bsModal").modal('hide');
+
+                }
+            });
+
+        } else {
+            alertify.error("Please select atleast one checkbox.");
+        }
+        
+
+    });
+</script>

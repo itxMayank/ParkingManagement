@@ -1,0 +1,171 @@
+﻿@using System.Web.UI.WebControls
+@model ParkingManagement.Models.CarsInfo
+
+@{
+    ViewBag.Title = "Index";
+}
+
+<style>
+    .clsAddVehicleType {
+        display: inline-block;
+        float: right;
+        margin-right: 5px;
+        cursor: pointer;
+    }
+</style>
+
+@using (Html.BeginForm("Index", "Home", FormMethod.Post)) 
+{
+    @Html.AntiForgeryToken()
+    
+    <div class="form-horizontal">
+        
+        @if (Model.ParkingInfo != null && Model.ParkingInfo.SlotTypes != null && Model.ParkingInfo.SlotTypes.Count > 0)
+        {
+            <div id="slotsRemaining" style="text-align: center; margin-top: 12px;">
+                <span style="pointer-events: none">
+                    <button type="button" class="btn btn-primary">
+                        Total slots Available <span class="badge badge-light" id="totalSpaceAvailable">@Model.ParkingInfo.TotalParkingSlots</span>
+                    </button>
+
+                    @foreach (var slotType in Model.ParkingInfo.SlotTypes.Keys)
+                    {
+                        <button type="button" class="btn btn-primary">
+                            @slotType <span class="badge badge-light" id="slot_@slotType">@Model.ParkingInfo.SlotTypes[slotType]</span>
+                        </button>
+                    }
+                </span>
+                
+                <span class="clsAddVehicleType clsAdminMode" style="display: none">
+                    <i class="fa fa-plus-circle fa-2x" aria-hidden="true" onclick="OpenAdminPanel()"></i>
+                </span>
+
+            </div>
+        }
+
+        <h4>Manage Parking</h4>
+
+        <hr/>
+        @Html.ValidationSummary(true, "", new {@class = "text-danger"})
+        <div class="form-group">
+            @Html.LabelFor(model => model.CarNumber, htmlAttributes: new {@class = "control-label col-md-2"})
+            <div class="col-md-3">
+                @Html.EditorFor(model => model.CarNumber, new {htmlAttributes = new {@class = "form-control clsRequired"}})
+                <label id="lblError-CarNumber" style="display: none; color: red;">This field is Required</label>
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.CarType, htmlAttributes: new {@class = "control-label col-md-2"})
+            <div class="col-md-3">
+                @Html.DropDownListFor(x => x.CarType, new SelectList(ViewBag.CarTypes, "Value", "Text"), "Select One", new {@class = "form-control DropDown clsRequired"})
+                <label id="lblError-CarType" style="display: none; color: red;">This field is Required</label>
+            </div>
+            <span class="clsAdminMode" style="display: none">
+                <i class="fa fa-trash fa-2x" style="cursor: pointer" aria-hidden="true" onclick="RemoveVehicleType()"></i>
+            </span>
+        </div>
+
+
+
+        <div class="form-group" style="pointer-events: none">
+            @Html.LabelFor(model => model.IsParked, htmlAttributes: new {@class = "control-label col-md-2"})
+            <div class="col-md-3">
+                <div class="checkbox">
+                    @Html.EditorFor(model => model.IsParked)
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div class="col-md-offset-2 col-md-10">
+                <input type="button" value="Add Vehicle" class="btn btn-success" id="btnSubmit"/>
+            </div>
+        </div>
+    </div>
+}
+
+<div id="parkedVehicles">
+    @Html.Action("GetParkedCars","Home")
+</div>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+}
+
+<script>
+
+    $(document).ready(function() {
+        var isParkingAvailable = '@Model.IsParkingSlotAvailable';
+        if (isParkingAvailable == 'False') {
+            alertify.error("No Parking slot available.");
+        }
+        $("#CarNumber").val("");
+        $("#CarType").val("");
+
+        $("#btnSubmit").click(function(event) {
+            var isValidForm = true;
+
+            $(".clsRequired").each(function(i, obj) {
+                var objVal = $(this).val();
+                var controlID = $(this).attr('id');
+
+                if (objVal == "0" || objVal == "") {
+                    isValidForm = false;
+                    $("#lblError-" + controlID).show();
+                    $(this).focus();
+                } else {
+                    $("#lblError-" + controlID).hide();
+                }
+
+            });
+
+            if (isValidForm == false) {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                return;
+            } else {
+                $('form').submit();
+            }
+
+        });
+
+    });
+
+    function RemoveVehicleType() {
+
+        var carType = $("#CarType").val();
+        if (carType == "") {
+            alertify.error("Please select Vehicle Type.");
+        } else {
+            
+            $.ajax({
+                type: "POST",
+                url: "/Home/RemoveVehicleType",
+                dataType: "json",
+                data: { carType: carType},
+                success: function (response) {
+                    if (response == true) {
+                        alertify.warning(carType +" is removed.");
+                        $('#CarType option:selected').remove();
+                    }
+                }
+            });
+        }
+
+    }
+
+    function OpenAdminPanel() {
+        $.ajax({
+            type: "POST",
+            url: "/Home/AdminPanel",
+            dataType: "html",
+            success: function (response) {
+                $("#modalBody").html(response);
+                $("#bsModal").modal('show');
+            }
+        });
+    }
+
+
+</script>

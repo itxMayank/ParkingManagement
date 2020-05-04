@@ -1,0 +1,82 @@
+﻿
+@model List<ParkingManagement.Models.CarsInfo>
+
+@{
+    int counter = 1;
+}
+
+<style>
+    td, th {
+        text-align: center;
+    }
+    .clsRemoveVehicleFromParking {
+        cursor: pointer;
+    }
+    
+</style>
+
+<table class="table table-striped" id="tblParkedVehicles">
+    <thead>
+        <tr>
+            <th scope="col">#</th>
+            <th scope="col">Vehicle Number</th>
+            <th scope="col">Vehicle Type</th>
+            <th scope="col">Slot Type</th>
+            <th scope="col">Slot Number</th>
+            <th scope="col">Is Parked</th>
+            <th scope="col">Vehicle In Time</th>
+            <th scope="col"></th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var carInfo in Model)
+    {
+        <tr>
+            <th scope="row">@counter</th>
+            <td>@carInfo.CarNumber</td>
+            <td>@carInfo.CarType</td>
+            <td>@carInfo.CarParkingSlotType</td>
+            <td>@carInfo.CarParkingSlotNumber</td>
+            <td>@carInfo.IsParked</td>
+            <td>@carInfo.CarInTime</td>
+            <td>
+                <i class="fa fa-trash clsRemoveVehicleFromParking" aria-hidden="true" onclick="RemoveVehicleFromParking(this, '@carInfo.Id')"></i>
+            </td>
+        </tr>
+        counter += 1;
+    }
+    </tbody>
+</table>
+
+<script>
+
+    $(document).ready(function() {
+        $("#tblParkedVehicles").DataTable();
+        $("input[type='search']").css("border", "1px solid black");
+    })
+
+
+    function RemoveVehicleFromParking(me, id) {
+
+        $.ajax({
+            type: "POST",
+            url: "/Home/RemoveCarFromParking",
+            dataType: "json",
+            data: {id: id},
+            success: function (response) {
+                if (response != null && response.ParkingInfo != null) {
+                    $("#totalSpaceAvailable").html(response.ParkingInfo.TotalParkingSlots);
+                    $("#slot_Small").html(response.ParkingInfo.SlotTypes.Small);
+                    $("#slot_Medium").html(response.ParkingInfo.SlotTypes.Medium);
+                    $("#slot_Large").html(response.ParkingInfo.SlotTypes.Large);
+                    //$(me).parent('td').parent('tr').remove();
+                    $("#parkedVehicles").load("/Home/GetParkedCars", function() {});
+                }
+              //
+
+            }
+        });
+
+    }
+
+</script>
